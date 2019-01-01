@@ -2,7 +2,7 @@
 WYSIWYG editor. Work in progress.
 
 Work done:
-* rotating labels
+* rotated labels
 * fullscreen (F12)
 * drag select
 * moving components
