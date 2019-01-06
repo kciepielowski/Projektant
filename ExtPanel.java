@@ -26,5 +26,6 @@ public class ExtPanel extends JPanel {
 	public void setSelectionRectangle(Rectangle2D r)
 	{
 		selectionRectangle=r;
+		getParent().repaint(500);
 	}
 }
