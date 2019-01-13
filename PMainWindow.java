@@ -5,14 +5,10 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
@@ -27,7 +23,6 @@ import javax.swing.border.Border;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JComponent;
 
 public class PMainWindow extends JFrame implements KeyListener{
 
@@ -38,141 +33,20 @@ public class PMainWindow extends JFrame implements KeyListener{
 	enum MouseMode {MOVE,RESIZE};
 	//private JFrame windowFrame;
 	private static JScrollPane scrollPanel;
-	private static ExtPanel content,page;
-	private static JPanel menu, propertiesPanel;
+	protected ExtPanel content,page;
+	protected JPanel menu, propertiesPanel;
 	private static JButton buttonMove,buttonResize;
 	static MouseCheck mouseActionCheck;
-	private static JComponent componentPointer;
-	private static List<JComponent> selectionList;
-	private static List<JComponent> componentList = new ArrayList<JComponent>();
-	private static JComponent activeComponent;
-    private static Rectangle2D selectionRectangle;
-    private static Border borderSelected,borderDefault;
-	private static MouseMode mouseMode;
+	private static ComponentsInterface componentPointer;
+	private static Band bandPointer;
+	protected List<ComponentsInterface> selectionList;
+	protected List<ComponentsInterface> componentList = new ArrayList<ComponentsInterface>();
+	protected List<Band> bandList = new ArrayList<Band>();
+	protected ComponentsInterface activeComponent;
+	//private static Band activeBand;
+    protected Border borderSelected,borderDefault;
 	private JTextPane prText,prRotation,prWidth,prHeight;//,prLeft,prTop;
-    	
-    private class MouseCheck extends MouseAdapter {
-	        private boolean mDrag = false;
-	    	private int sX,sY,pX,pY;
-	    	public MouseCheck(){
-	    		sX=0;
-	    		sY=0;
-	    		pX=0;
-	    		pY=0;
-	    	}
-public void componentMove(JComponent c, int X, int Y){
-	((BuildInFunctions)c).setLocation(c.getX()+X,c.getY()+Y);
-}
-public void componentResize(JComponent c, int X, int Y){
-	((BuildInFunctions)c).setSize(c.getWidth()+X,c.getHeight()+Y);
-}
-
-	        /**
-	         * Sprawdza czy trafiono w komponent 
-	         * @param c Wskaźnik na komponent
-	         * @param X Położenie X
-	         * @param Y Położenie Y
-	         * @return zwraca true lub false
-	         */
-public boolean mouseIn(JComponent c, int X, int Y){
-	if(c.contains(X, Y))return true;
-	return false;
-}
-/**
- * Sprawdza czy trafiono w komponent
- * @param c Wskaźnik na komponent
- * @param p Punkt
- * @return zwraca true lub false
- */
-public boolean mouseIn(JComponent c, Point p) {
-return mouseIn(c,p.x,p.y);
-}
-	        @Override
-	        public void mousePressed(MouseEvent e) {
-	        	activeComponent=null;
-	        	for(Component c:componentList){
-                if(mouseIn((JComponent)c, e.getPoint())){
-                	pX=e.getX();
-                	pY=e.getY();
-                	activeComponent=(JComponent)c;
-                	activeComponent.setBorder(borderSelected);
-                	if(!selectionList.contains((JComponent)c)){
-                		for(Object l: selectionList.toArray()){
-		        		((JComponent)l).setBorder(borderDefault);
-		        		}
-	            		selectionList.clear();
-                		selectionList.add((JComponent)c);
-                		}
-                }
-	        	}
-	        	if(activeComponent==null){
-                	sX=e.getX();
-                	sY=e.getY();
-                	pX=sX;
-                	pY=sY;
-                	selectionRectangle = new Rectangle2D.Double(sY,sX, 0, 0);
-                }  	
-	        }
-	        @Override
-	        public void mouseReleased(MouseEvent e) {
-            	if(selectionList.size()>0 && activeComponent==null)
-            		activeComponent=selectionList.get(selectionList.size()-1);
-	            if (mDrag) {
-	            	selectionRectangle = new Rectangle2D.Double(sY,sX, 0, 0);
-	            	page.setSelectionRectangle(selectionRectangle);
-	            } else {
-	            	if(activeComponent!=null) {
-	            		for(Object c: selectionList.toArray()){
-		        		((JComponent)c).setBorder(borderDefault);
-		        		}
-	            		selectionList.clear();
-		        	}
-	            }
-
-        		setPropertiesPanel();
-	            mDrag = false;
-	        }
-
-	        @Override
-	        public void mouseDragged(MouseEvent e) {
-	        	mDrag = true;
-	        	if(activeComponent !=null){
-	        		for(Object c: selectionList.toArray()){
-	        		switch(mouseMode) {
-	        		case MOVE:
-	        		componentMove((JComponent)c,e.getX()-pX,e.getY()-pY);
-	        		break;
-	        		case RESIZE:
-	        			componentResize((JComponent)c,e.getX()-pX,e.getY()-pY);
-	        			break;
-	        		default:
-	        			break;
-	        		}
-	        		}
-	        		if(selectionList.isEmpty()==false)content.repaint();
-	        		pX=e.getX();
-	        		pY=e.getY();
-	        	} else{
-	        		selectionRectangle.setRect(
-	        						e.getX()>sX?sX:e.getX(),
-	        						e.getY()>sY?sY:e.getY(), 
-	        						e.getX()>sX?(e.getX()-sX):(sX-e.getX()),
-	    	        				e.getY()>sY?(e.getY()-sY):(sY-e.getY()));
-	        		page.setSelectionRectangle(selectionRectangle);
-	        		selectionList.clear();
-	        		activeComponent=null;
-	        		propertiesPanel.removeAll();
-	        		for(Component c:componentList){
-	                	if(selectionRectangle.contains(c.getLocation())){
-	                		selectionList.add((JComponent)c);
-	            //    		System.out.println(c.getClass());
-	                		((JComponent)c).setBorder(borderSelected);
-	        			}else {((JComponent)c).setBorder(borderDefault);}
-		        	}
-	        	}
-	        }
-    } //koniec wew. klasy
-	 
+    		 
 	/**
 	 * Launch the application.
 	 */
@@ -196,8 +70,8 @@ return mouseIn(c,p.x,p.y);
 	 * Create the application.
 	 */
 	public PMainWindow() {
-		mouseActionCheck = new MouseCheck();
-		selectionList = new ArrayList<JComponent>();
+		mouseActionCheck = new MouseCheck(this);
+		selectionList = new ArrayList<ComponentsInterface>();
 		menu = new JPanel();
 		propertiesPanel = new JPanel();
 		content=new ExtPanel();
@@ -206,6 +80,7 @@ return mouseIn(c,p.x,p.y);
 		borderSelected =BorderFactory.createDashedBorder(Color.blue, 5, 5);
 		borderDefault =BorderFactory.createDashedBorder(Color.lightGray, 1, 3);	
 		setFocusable(true);
+		content.setFocusable(true);
         requestFocusInWindow();
 
 	}
@@ -215,14 +90,22 @@ return mouseIn(c,p.x,p.y);
 		createPropertiesPanel();
 		createScrollPanel();
 		createPage();
+		bandPointer = new Band("Band name");
+		bandPointer.setBackground(Color.white);
+		bandPointer.setBorder(borderDefault);
+		bandPointer.setLayout(null);
+		bandList.add(bandPointer);
+		content.add(bandPointer);
 		addRotatedLabel("test",0,45,0,70,15);
 		addRotatedLabel("test2", 45,100, 100, 70, 15);
 		addRotatedLabel("test3", 180,120, 120, 70, 15);
-		//addListeners();
-		content.setComponentZOrder(page,content.getComponentCount()-1);
+		content.setComponentZOrder(bandPointer,content.getComponentCount()-2);
         activeComponent=null;
-        mouseMode=MouseMode.MOVE;
+//        activeBand=null;
+        mouseActionCheck.mouseMode=MouseMode.MOVE;
+		bandPointer.setBounds(0,0,page.getWidth(),200);
 		setVisible(true);
+
 	}
 	private void createWindow()
 	{
@@ -253,7 +136,7 @@ return mouseIn(c,p.x,p.y);
 
 				buttonMove.setBorder(borderSelected);
 				buttonResize.setBorder(null);
-				mouseMode=MouseMode.MOVE;
+				mouseActionCheck.mouseMode=MouseMode.MOVE;
 			}
 		});
 		menu.add(buttonMove);
@@ -269,7 +152,7 @@ return mouseIn(c,p.x,p.y);
 			public void actionPerformed(ActionEvent e) {
 				buttonResize.setBorder(borderSelected);
 				buttonMove.setBorder(null);
-				mouseMode=MouseMode.RESIZE;
+				mouseActionCheck.mouseMode=MouseMode.RESIZE;
 			}
 		});
 		menu.add(buttonResize);
@@ -288,7 +171,7 @@ return mouseIn(c,p.x,p.y);
 		propertiesPanel.add(panelHeader);
 		
 	}
-	private void setPropertiesPanel()
+	protected void setPropertiesPanel()
 	{ 
 		boolean text=true,
 				size=true,
@@ -296,12 +179,12 @@ return mouseIn(c,p.x,p.y);
 				location=true,
 				font=true;
 		propertiesPanel.removeAll();
-		for(Object l: selectionList.toArray()){
-			if(text)text=((BuildInFunctions) l).gotText();
-			if(size)size=((BuildInFunctions) l).gotSize();
-			if(rotation)rotation=((BuildInFunctions) l).gotRotation();
-			if(location)location=((BuildInFunctions) l).gotLocation();
-			if(font)font=((BuildInFunctions) l).gotFont();
+		for(ComponentsInterface l: selectionList){
+			if(text)text=l.gotText();
+			if(size)size=l.gotSize();
+			if(rotation)rotation=l.gotRotation();
+			if(location)location=l.gotLocation();
+			if(font)font=l.gotFont();
     		}
     	if (activeComponent !=null) {
     		
@@ -314,7 +197,7 @@ return mouseIn(c,p.x,p.y);
 			prText=new JTextPane();
 			prText.setSize(200, 15);
 			prText.setPreferredSize(prText.getSize());
-			prText.setText(((BuildInFunctions)activeComponent).getText());
+			prText.setText(activeComponent.getText());
 			propertiesPanel.add(prText);
 			prText.addKeyListener(new KeyListener() {
 				@Override
@@ -325,8 +208,8 @@ return mouseIn(c,p.x,p.y);
 						String txt;
 						txt=prText.getText();
 						txt=txt.substring(0, txt.length() -1);
-						for(Object l: selectionList.toArray()){
-							((BuildInFunctions) l).setText(txt);
+						for(ComponentsInterface l: selectionList){
+							l.setText(txt);
 							}	
 						prText.setText(txt);
 					}
@@ -346,7 +229,7 @@ return mouseIn(c,p.x,p.y);
 				prWidth=new JTextPane();
 				prWidth.setSize(50, 15);
 				prWidth.setPreferredSize(prWidth.getSize());
-				prWidth.setText(Integer.toString(((BuildInFunctions)activeComponent).getWidth()));
+				prWidth.setText(Integer.toString(activeComponent.getWidth()));
 				propertiesPanel.add(prWidth);
 				prWidth.addKeyListener(new KeyListener() {
 					@Override
@@ -356,8 +239,8 @@ return mouseIn(c,p.x,p.y);
 							String w;
 						w=prWidth.getText();
 						w=w.substring(0, w.length() -1);
-							for(Object l: selectionList.toArray()){
-								((BuildInFunctions) l).setWidth(Integer.parseInt(w));
+							for(ComponentsInterface l: selectionList){
+								l.setWidth(Integer.parseInt(w));
 							}
 							prWidth.setText(w);
 							
@@ -377,7 +260,7 @@ return mouseIn(c,p.x,p.y);
 					prHeight.setSize(50, 15);
 					
 					prHeight.setPreferredSize(prHeight.getSize());
-					prHeight.setText(Integer.toString(((BuildInFunctions)activeComponent).getHeight()));
+					prHeight.setText(Integer.toString(activeComponent.getHeight()));
 					propertiesPanel.add(prHeight);
 					prHeight.addKeyListener(new KeyListener() {
 						@Override
@@ -387,8 +270,8 @@ return mouseIn(c,p.x,p.y);
 								String h;
 							h=prHeight.getText();
 							h=h.substring(0, h.length() -1);
-								for(Object l: selectionList.toArray()){
-									((BuildInFunctions) l).setHeight(Integer.parseInt(h));
+								for(ComponentsInterface l: selectionList){
+									l.setHeight(Integer.parseInt(h));
 								}
 								prHeight.setText(h);
 								
@@ -409,7 +292,7 @@ return mouseIn(c,p.x,p.y);
 				prRotation=new JTextPane();
 				prRotation.setSize(50, 15);
 				prRotation.setPreferredSize(prRotation.getSize());
-				prRotation.setText(Integer.toString(((BuildInFunctions)activeComponent).getRotation()));
+				prRotation.setText(Integer.toString(activeComponent.getRotation()));
 				propertiesPanel.add(prRotation);
 				prRotation.addKeyListener(new KeyListener() {
 					@Override
@@ -419,8 +302,8 @@ return mouseIn(c,p.x,p.y);
 							String rot;
 						rot=prRotation.getText();
 						rot=rot.substring(0, rot.length() -1);
-							for(Object l: selectionList.toArray()){
-								((BuildInFunctions) l).setRotation(Integer.parseInt(rot));
+							for(ComponentsInterface l: selectionList){
+								l.setRotation(Integer.parseInt(rot));
 							}
 						prRotation.setText(rot);
 							
@@ -433,7 +316,10 @@ return mouseIn(c,p.x,p.y);
 					
 				});
 			}
-		//,prHeigth,prLeft,prTop
+		/* 
+		 * TODO prLeft,prTop, border, align, font, name
+		 * band properties
+		 */
     	}
 		propertiesPanel.repaint();
     	
@@ -465,27 +351,26 @@ return mouseIn(c,p.x,p.y);
 	{
 		componentPointer=new RotatedLabel(text,rot,sx,sy,w,h);
 		componentList.add(componentPointer);
-		content.add(componentPointer);
-		content.setComponentZOrder(componentPointer, 0);
+		content.add((Component)componentPointer);
+		content.setComponentZOrder((Component)componentPointer, 0);
 	}
 	private void addListeners() {
 		addKeyListener(this);
+		content.addKeyListener(this); // dodanie do samego okna nie zawsze działa
 		content.addMouseListener(mouseActionCheck);
 		content.addMouseMotionListener(mouseActionCheck);
 	}
 	@Override
 	public void keyReleased(KeyEvent e) {
-		//System.out.println(e.getKeyCode());
-		if (e.getKeyCode()==123) //F12 pełny ekran
+		if (e.getKeyCode()==KeyEvent.VK_F12) //pełny ekran
 		{
 			setExtendedState(JFrame.MAXIMIZED_BOTH);
-
-			dispose();
+			dispose(); //innaczej nie można włączyć/wyłączyć obramowania
 			if(isUndecorated()==false)	
 			setUndecorated(true);
 			else
 			setUndecorated(false);
-			setVisible(true);
+			setVisible(true);  // narysuj ponownie
 		}
 	}
 	@Override

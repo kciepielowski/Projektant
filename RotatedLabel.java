@@ -9,7 +9,7 @@ import java.awt.geom.AffineTransform;
 import javax.swing.JLabel;
 import javax.swing.border.Border;
 
-public class RotatedLabel extends JLabel implements BuildInFunctions {
+public class RotatedLabel extends JLabel implements ComponentsInterface {
 
 	private static final long serialVersionUID = 1L;
 	private int rotation;
