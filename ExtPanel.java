@@ -1,4 +1,4 @@
-package Projektant;
+package projektant;
 
 import java.awt.Color;
 import java.awt.Graphics;

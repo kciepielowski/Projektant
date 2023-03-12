@@ -5,4 +5,4 @@
  * @author karakar
  *
  */
-package Projektant;
+package projektant;

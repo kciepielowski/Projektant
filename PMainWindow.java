@@ -1,4 +1,4 @@
-package Projektant;
+package projektant;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -11,6 +11,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -30,12 +33,15 @@ public class PMainWindow extends JFrame implements KeyListener{
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	enum MouseMode {MOVE,RESIZE};
+    private static final int TEXT_FIELD_HEIGHT = 20;
+    private static final int SMALL_TEXT_FIELD_WIDTH = 70;    
+    private static final int VERTIVAL_SPACE_BETWEEN_FIELDS = 5;  
+	enum MouseMode {MOVE, RESIZE, LABEL};
 	//private JFrame windowFrame;
 	private static JScrollPane scrollPanel;
-	protected ExtPanel content,page;
+	protected ExtPanel content, page;
 	protected JPanel menu, propertiesPanel;
-	private static JButton buttonMove,buttonResize;
+	private static JButton buttonMove, buttonResize, buttonLabel;
 	static MouseCheck mouseActionCheck;
 	private static ComponentsInterface componentPointer;
 	private static Band bandPointer;
@@ -44,9 +50,8 @@ public class PMainWindow extends JFrame implements KeyListener{
 	protected List<Band> bandList = new ArrayList<Band>();
 	protected ComponentsInterface activeComponent;
 	//private static Band activeBand;
-    protected Border borderSelected,borderDefault;
-	private JTextPane prText,prRotation,prWidth,prHeight;//,prLeft,prTop;
-    		 
+    protected Border borderSelected, borderDefault;
+	private JTextPane prName, prText, prRotation, prWidth, prHeight, prLeft, prTop;
 	/**
 	 * Launch the application.
 	 */
@@ -96,9 +101,9 @@ public class PMainWindow extends JFrame implements KeyListener{
 		bandPointer.setLayout(null);
 		bandList.add(bandPointer);
 		content.add(bandPointer);
-		addRotatedLabel("test",0,45,0,70,15);
-		addRotatedLabel("test2", 45,100, 100, 70, 15);
-		addRotatedLabel("test3", 180,120, 120, 70, 15);
+		addRotatedLabel(0, 45, 0, 70, 15);
+		addRotatedLabel(45,100, 100, 70, 15);
+		addRotatedLabel(180,120, 120, 70, 15);
 		content.setComponentZOrder(bandPointer,content.getComponentCount()-2);
         activeComponent=null;
 //        activeBand=null;
@@ -122,7 +127,7 @@ public class PMainWindow extends JFrame implements KeyListener{
 		menu.setBorder(BorderFactory.createRaisedBevelBorder());
 		menu.setLayout(new FlowLayout());
 		add(menu,BorderLayout.WEST);
-		((FlowLayout)menu.getLayout()).setVgap(2);
+		((FlowLayout)menu.getLayout()).setVgap(5);
 		buttonMove = new JButton("");
 		ImageIcon iconPointer = new ImageIcon(PMainWindow.class.getResource("/move.png")); 
 		buttonMove.setIcon(iconPointer);
@@ -136,7 +141,9 @@ public class PMainWindow extends JFrame implements KeyListener{
 
 				buttonMove.setBorder(borderSelected);
 				buttonResize.setBorder(null);
+				buttonLabel.setBorder(null);
 				mouseActionCheck.mouseMode=MouseMode.MOVE;
+			    requestFocusInWindow();
 			}
 		});
 		menu.add(buttonMove);
@@ -152,11 +159,30 @@ public class PMainWindow extends JFrame implements KeyListener{
 			public void actionPerformed(ActionEvent e) {
 				buttonResize.setBorder(borderSelected);
 				buttonMove.setBorder(null);
+				buttonLabel.setBorder(null);
 				mouseActionCheck.mouseMode=MouseMode.RESIZE;
+			    requestFocusInWindow();
 			}
 		});
 		menu.add(buttonResize);
+		buttonLabel = new JButton("");
+		iconPointer = new ImageIcon(PMainWindow.class.getResource("/label.png"));
+		buttonLabel.setIcon(iconPointer);
+		buttonLabel.setToolTipText("Label");
+		buttonLabel.setBorder(null);
+		buttonLabel.setContentAreaFilled(false);
+		buttonLabel.addActionListener(new ActionListener() {
 			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				buttonLabel.setBorder(borderSelected);
+				buttonMove.setBorder(null);
+				buttonResize.setBorder(null);
+				mouseActionCheck.mouseMode=MouseMode.LABEL;
+			    requestFocusInWindow();
+			}
+		});
+		menu.add(buttonLabel);
 		
 	}
 	private void createPropertiesPanel()
@@ -165,7 +191,7 @@ public class PMainWindow extends JFrame implements KeyListener{
 		propertiesPanel.setPreferredSize(new Dimension(300,getHeight()));
 		propertiesPanel.setBorder(BorderFactory.createRaisedBevelBorder());
 		propertiesPanel.setLayout(new FlowLayout());
-		((FlowLayout)propertiesPanel.getLayout()).setVgap(2);
+		((FlowLayout)propertiesPanel.getLayout()).setVgap(VERTIVAL_SPACE_BETWEEN_FIELDS);
 		add(propertiesPanel,BorderLayout.EAST);	
 		JLabel panelHeader = new JLabel("Components properties");
 		propertiesPanel.add(panelHeader);
@@ -187,31 +213,153 @@ public class PMainWindow extends JFrame implements KeyListener{
 			if(font)font=l.gotFont();
     		}
     	if (activeComponent !=null) {
-    		
-    	
+	        @SuppressWarnings("rawtypes")
+			Class[] parameterTypes = new Class[1];
+	        Method method = null;
+	        parameterTypes[0] = String.class;
+			try {
+				method = ComponentsInterface.class.getMethod("setName", parameterTypes);
+			} catch (NoSuchMethodException | SecurityException e) {
+				e.printStackTrace();
+			}
+			prName=new JTextPane();
+			addControlPanelTextField("Name"
+			         ,100, TEXT_FIELD_HEIGHT
+					 ,prName
+			         ,150, TEXT_FIELD_HEIGHT
+			         ,activeComponent.getName()
+			         ,method);
 		if(text) {
-		JLabel lab =new JLabel("Text");
-		lab.setSize(40, 15);
+	        parameterTypes[0] = String.class;
+			try {
+				method = ComponentsInterface.class.getMethod("setText", parameterTypes);
+			} catch (NoSuchMethodException | SecurityException e) {
+				e.printStackTrace();
+			}
+			prText=new JTextPane();
+			addControlPanelTextField("Text"
+			         ,40, TEXT_FIELD_HEIGHT
+					 ,prText
+			         ,200, TEXT_FIELD_HEIGHT
+			         ,activeComponent.getText()
+			         ,method);
+		}
+		if(size) {
+	        parameterTypes[0] = int.class;
+			try {
+				method = ComponentsInterface.class.getMethod("setWidth", parameterTypes);
+			} catch (NoSuchMethodException | SecurityException e) {
+				e.printStackTrace();
+			}
+			prWidth=new JTextPane();
+			addControlPanelTextField("Width"
+			         ,50, TEXT_FIELD_HEIGHT
+					 ,prWidth
+			         ,SMALL_TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT
+			         ,Integer.toString(activeComponent.getWidth())
+			         ,method);
+				try {
+					method = ComponentsInterface.class.getMethod("setHeight", parameterTypes);
+				} catch (NoSuchMethodException | SecurityException e) {
+					e.printStackTrace();
+				}
+				prHeight=new JTextPane();
+				addControlPanelTextField("Height"
+				         ,50, TEXT_FIELD_HEIGHT
+						 ,prHeight
+				         ,SMALL_TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT
+				         ,Integer.toString(activeComponent.getHeight())
+				         ,method);
+			}
+		if(location) {
+	        parameterTypes[0] = int.class;
+			try {
+				method = ComponentsInterface.class.getMethod("setY", parameterTypes);
+			} catch (NoSuchMethodException | SecurityException e) {
+				e.printStackTrace();
+			}
+			prTop=new JTextPane();
+			addControlPanelTextField("Top"
+			         ,50, TEXT_FIELD_HEIGHT
+					 ,prTop
+			         ,SMALL_TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT
+			         ,Integer.toString(activeComponent.getY())
+			         ,method);
+				try {
+					method = ComponentsInterface.class.getMethod("setX", parameterTypes);
+				} catch (NoSuchMethodException | SecurityException e) {
+					e.printStackTrace();
+				}
+				prLeft=new JTextPane();
+				addControlPanelTextField("Left"
+				         ,50, TEXT_FIELD_HEIGHT
+						 ,prLeft
+				         ,SMALL_TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT
+				         ,Integer.toString(activeComponent.getX())
+				         ,method);
+			}
+		if(rotation) {
+	        parameterTypes[0] = int.class;
+			try {
+				method = ComponentsInterface.class.getMethod("setRotation", parameterTypes);
+			} catch (NoSuchMethodException | SecurityException e) {
+				e.printStackTrace();
+			}
+			prRotation=new JTextPane();
+			addControlPanelTextField("Rotation angle"
+			         ,130, TEXT_FIELD_HEIGHT
+					 ,prRotation
+			         ,SMALL_TEXT_FIELD_WIDTH, TEXT_FIELD_HEIGHT
+			         ,Integer.toString(activeComponent.getRotation())
+			         ,method);
+			}
+		/* 
+		 * TODO  border, align, font, name
+		 * band properties
+		 */
+    	}
+    	propertiesPanel.validate();
+		propertiesPanel.repaint();
+    	
+	}
+	private void addControlPanelTextField(final String text
+								         ,final int labLength, final int labHeigth
+										 ,JTextPane field
+								         ,final int fieldLength, final int fieldHeight
+								         ,String fieldValue
+								         ,Method fieldMethod)
+	{
+		JLabel lab =new JLabel(text);
+		lab.setSize(labLength, labHeigth);
 		lab.setPreferredSize(lab.getSize());
 			propertiesPanel.add(lab);
-			prText=new JTextPane();
-			prText.setSize(200, 15);
-			prText.setPreferredSize(prText.getSize());
-			prText.setText(activeComponent.getText());
-			propertiesPanel.add(prText);
-			prText.addKeyListener(new KeyListener() {
+			field.setSize(fieldLength, fieldHeight);
+			field.setPreferredSize(field.getSize());
+			field.setText(fieldValue);
+			propertiesPanel.add(field);
+			field.addKeyListener(new KeyListener() {
 				@Override
 				public void keyReleased(KeyEvent e) {
 					if (e.getKeyCode()==10) //Enter
 					{
-
-						String txt;
-						txt=prText.getText();
-						txt=txt.substring(0, txt.length() -1);
+					String val;
+					val=field.getText();
+					@SuppressWarnings("rawtypes")
+					Class[] parameterTypes = fieldMethod.getParameterTypes();
+					val=val.substring(0, val.length() -1);
 						for(ComponentsInterface l: selectionList){
-							l.setText(txt);
-							}	
-						prText.setText(txt);
+							try {
+								if (parameterTypes[0] == int.class){
+								fieldMethod.invoke(l, Integer.parseInt(val));
+								}else{
+									fieldMethod.invoke(l,val);
+								}
+							} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+								e1.printStackTrace();
+							}
+						}
+						field.setText(val);
+						
 					}
 				}
 				@Override
@@ -219,111 +367,9 @@ public class PMainWindow extends JFrame implements KeyListener{
 				@Override
 				public void keyPressed(KeyEvent e) {}
 				
-			});
-		}
-		if(size) {
-			JLabel lab =new JLabel("Width");
-			lab.setSize(50, 15);
-			lab.setPreferredSize(lab.getSize());
-				propertiesPanel.add(lab);
-				prWidth=new JTextPane();
-				prWidth.setSize(50, 15);
-				prWidth.setPreferredSize(prWidth.getSize());
-				prWidth.setText(Integer.toString(activeComponent.getWidth()));
-				propertiesPanel.add(prWidth);
-				prWidth.addKeyListener(new KeyListener() {
-					@Override
-					public void keyReleased(KeyEvent e) {
-						if (e.getKeyCode()==10) //Enter
-						{
-							String w;
-						w=prWidth.getText();
-						w=w.substring(0, w.length() -1);
-							for(ComponentsInterface l: selectionList){
-								l.setWidth(Integer.parseInt(w));
-							}
-							prWidth.setText(w);
-							
-						}
-					}
-					@Override
-					public void keyTyped(KeyEvent e) {}
-					@Override
-					public void keyPressed(KeyEvent e) {}
-					
-				});
-				lab =new JLabel("Heigth");
-				lab.setSize(50, 15);
-				lab.setPreferredSize(lab.getSize());
-					propertiesPanel.add(lab);
-					prHeight=new JTextPane();
-					prHeight.setSize(50, 15);
-					
-					prHeight.setPreferredSize(prHeight.getSize());
-					prHeight.setText(Integer.toString(activeComponent.getHeight()));
-					propertiesPanel.add(prHeight);
-					prHeight.addKeyListener(new KeyListener() {
-						@Override
-						public void keyReleased(KeyEvent e) {
-							if (e.getKeyCode()==10) //Enter
-							{
-								String h;
-							h=prHeight.getText();
-							h=h.substring(0, h.length() -1);
-								for(ComponentsInterface l: selectionList){
-									l.setHeight(Integer.parseInt(h));
-								}
-								prHeight.setText(h);
-								
-							}
-						}
-						@Override
-						public void keyTyped(KeyEvent e) {}
-						@Override
-						public void keyPressed(KeyEvent e) {}
-						
-					});
-			}
-		if(rotation) {
-			JLabel lab =new JLabel("Rotation angle");
-			lab.setSize(130, 15);
-			lab.setPreferredSize(lab.getSize());
-				propertiesPanel.add(lab);
-				prRotation=new JTextPane();
-				prRotation.setSize(50, 15);
-				prRotation.setPreferredSize(prRotation.getSize());
-				prRotation.setText(Integer.toString(activeComponent.getRotation()));
-				propertiesPanel.add(prRotation);
-				prRotation.addKeyListener(new KeyListener() {
-					@Override
-					public void keyReleased(KeyEvent e) {
-						if (e.getKeyCode()==10) //Enter
-						{
-							String rot;
-						rot=prRotation.getText();
-						rot=rot.substring(0, rot.length() -1);
-							for(ComponentsInterface l: selectionList){
-								l.setRotation(Integer.parseInt(rot));
-							}
-						prRotation.setText(rot);
-							
-						}
-					}
-					@Override
-					public void keyTyped(KeyEvent e) {}
-					@Override
-					public void keyPressed(KeyEvent e) {}
-					
-				});
-			}
-		/* 
-		 * TODO prLeft,prTop, border, align, font, name
-		 * band properties
-		 */
-    	}
-		propertiesPanel.repaint();
-    	
+			});	
 	}
+	
 	private void createScrollPanel()
 	{
 		scrollPanel.setLayout(new ScrollPaneLayout());
@@ -347,31 +393,49 @@ public class PMainWindow extends JFrame implements KeyListener{
 				content.add(page);
 				content.setPreferredSize(new Dimension(scrollPanel.getWidth(),page.getHeight()));
 	}
-	private void addRotatedLabel(String text, int rot, int sx, int sy, int w, int h)
+	public void addRotatedLabel(int rot, int sx, int sy, int w, int h)
 	{
-		componentPointer=new RotatedLabel(text,rot,sx,sy,w,h);
+		componentPointer=new RotatedLabel(rot,sx,sy,w,h);
 		componentList.add(componentPointer);
 		content.add((Component)componentPointer);
 		content.setComponentZOrder((Component)componentPointer, 0);
+		componentPointer.setBorder(borderDefault);
 	}
 	private void addListeners() {
 		addKeyListener(this);
 		content.addKeyListener(this); // dodanie do samego okna nie zawsze działa
+		menu.addKeyListener(this);
+		page.addKeyListener(this);
+		propertiesPanel.addKeyListener(this);
 		content.addMouseListener(mouseActionCheck);
 		content.addMouseMotionListener(mouseActionCheck);
 	}
 	@Override
 	public void keyReleased(KeyEvent e) {
-		if (e.getKeyCode()==KeyEvent.VK_F12) //pełny ekran
-		{
-			setExtendedState(JFrame.MAXIMIZED_BOTH);
+		switch (e.getKeyCode()){
+		case KeyEvent.VK_F12: //pełny ekran
+			setExtendedState(JFrame.MAXIMIZED_BOTH);;
 			dispose(); //innaczej nie można włączyć/wyłączyć obramowania
 			if(isUndecorated()==false)	
 			setUndecorated(true);
 			else
 			setUndecorated(false);
 			setVisible(true);  // narysuj ponownie
+		break;
+		case KeyEvent.VK_DELETE:
+			activeComponent = null;
+			for(ComponentsInterface l: selectionList){
+				content.remove((Component) l);
+				componentList.remove((Component) l);
+			}
+			selectionList.clear();
+	        setPropertiesPanel();
+	        repaint();
+			break;
+		default: 
+			break;
 		}
+		
 	}
 	@Override
 	public void keyTyped(KeyEvent e) {}

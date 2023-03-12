@@ -1,4 +1,4 @@
-package Projektant;
+package projektant;
 
 import java.awt.Font;
 import java.awt.Point;
@@ -23,6 +23,8 @@ abstract interface ComponentsInterface {
 	  public default boolean gotLocation(){
 			return true;
 	  }
+	  public abstract void setName(String s);
+	  public abstract String getName();
 	  public default void setText(String text) {}
 	  public default String getText(){
 			return null;
@@ -40,6 +42,8 @@ abstract interface ComponentsInterface {
 	  public default void setLocation(int x, int y){}
 	  public abstract int getX();
 	  public abstract int getY();
+	  public abstract void setX(int x);
+	  public abstract void setY(int y); 
 	  public abstract boolean contains(int x, int y);
 	  public abstract void setBorder(Border b);
 	  public abstract Point getLocation();

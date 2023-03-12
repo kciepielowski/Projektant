@@ -1,11 +1,11 @@
-package Projektant;
+package projektant;
 
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
 
-import Projektant.PMainWindow.MouseMode;
+import projektant.PMainWindow.MouseMode;
 
 public class MouseCheck extends MouseAdapter {
 	final PMainWindow parent;
@@ -73,7 +73,12 @@ return mouseIn(c,p.x,p.y);
         	pX=sX;
         	pY=sY;
         	selectionRectangle = new Rectangle2D.Double(sY,sX, 0, 0);
+        	for(ComponentsInterface c: parent.selectionList){
+        		c.setBorder(parent.borderDefault);
+        		}
+        		parent.selectionList.clear();
         }  	
+		parent.setPropertiesPanel();
     }
     @Override
     public void mouseReleased(MouseEvent e) {
@@ -82,14 +87,16 @@ return mouseIn(c,p.x,p.y);
         if (mDrag) {
         	selectionRectangle = new Rectangle2D.Double(sY,sX, 0, 0);
         	parent.page.setSelectionRectangle(selectionRectangle);
-        } else {
-        	if(parent.activeComponent!=null) {
-        		for(ComponentsInterface c: parent.selectionList){
-        		c.setBorder(parent.borderDefault);
-        		}
-        		parent.selectionList.clear();
-        	}
-        }
+    		switch(mouseMode) {
+    		case LABEL:
+    			if( e.getX() > sX && e.getY() > sY){
+    			  parent.addRotatedLabel(0, sX, sY, e.getX()-sX,e.getY()-sY);
+    			}
+    			break;
+    		default:
+    			break;
+    		}
+    	} 
 
         parent.setPropertiesPanel();
         mDrag = false;
@@ -98,7 +105,7 @@ return mouseIn(c,p.x,p.y);
     @Override
     public void mouseDragged(MouseEvent e) {
     	mDrag = true;
-    	if(parent.activeComponent !=null){
+    	if(parent.activeComponent != null){
     		for(ComponentsInterface c: parent.selectionList){
     		switch(mouseMode) {
     		case MOVE:
@@ -107,6 +114,8 @@ return mouseIn(c,p.x,p.y);
     		case RESIZE:
     			componentResize(c,e.getX()-pX,e.getY()-pY);
     			break;
+    		case LABEL:
+    			break;
     		default:
     			break;
     		}
@@ -114,22 +123,24 @@ return mouseIn(c,p.x,p.y);
     		if(parent.selectionList.isEmpty()==false)parent.content.repaint();
     		pX=e.getX();
     		pY=e.getY();
-    	} else{
-    		selectionRectangle.setRect(
-    						e.getX()>sX?sX:e.getX(),
-    						e.getY()>sY?sY:e.getY(), 
-    						e.getX()>sX?(e.getX()-sX):(sX-e.getX()),
-	        				e.getY()>sY?(e.getY()-sY):(sY-e.getY()));
-    		parent.page.setSelectionRectangle(selectionRectangle);
-    		parent.selectionList.clear();
-    		parent.activeComponent=null;
-    		parent.propertiesPanel.removeAll();
-    		for(ComponentsInterface c:parent.componentList){
-            	if(selectionRectangle.contains(c.getLocation())){
-            		parent.selectionList.add(c);
-            		c.setBorder(parent.borderSelected);
-    			}else {c.setBorder(parent.borderDefault);}
-        	}
-    	}
+		} else {
+    		pX=e.getX();
+    		pY=e.getY();
+				selectionRectangle.setRect(pX > sX ? sX : pX,
+                                           pY > sY ? sY : pY, 
+                                           pX > sX ? (pX - sX) : (sX - pX),
+                                           pY > sY ? (pY - sY) : (sY - pY));
+				parent.page.setSelectionRectangle(selectionRectangle);
+				parent.selectionList.clear();
+				parent.activeComponent = null;
+				for (ComponentsInterface c : parent.componentList) {
+					if (selectionRectangle.contains(c.getLocation())) {
+						parent.selectionList.add(c);
+						c.setBorder(parent.borderSelected);
+					} else {
+						c.setBorder(parent.borderDefault);
+					}
+				}
+		}
     }
 }
