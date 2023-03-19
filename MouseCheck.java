@@ -11,7 +11,8 @@ public class MouseCheck extends MouseAdapter {
 	final PMainWindow parent;
 	protected MouseMode mouseMode;
     protected Rectangle2D selectionRectangle;
-	
+	protected ComponentsInterface lastDoubleClicked;
+	protected int lastRotation;
 	
     private boolean mDrag = false;
 	private int sX,sY,pX,pY;
@@ -97,7 +98,6 @@ return mouseIn(c,p.x,p.y);
     			break;
     		}
     	} 
-
         parent.setPropertiesPanel();
         mDrag = false;
     }
@@ -143,4 +143,33 @@ return mouseIn(c,p.x,p.y);
 				}
 		}
     }
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		//super.mouseClicked(e);
+		if(lastDoubleClicked != null){
+	        if(lastDoubleClicked instanceof RotatedLabel){
+			RotatedLabel label = ((RotatedLabel)lastDoubleClicked);
+			label.setEditable(false);
+			label.setRotation(lastRotation);
+			label.repaint();
+			parent.requestFocusInWindow();
+      	  	lastDoubleClicked = null;
+	        }
+		}else{
+		if((e.getClickCount() == 2 && e.getButton() == MouseEvent.BUTTON1)){
+	    	if(parent.activeComponent != null){
+		          if(parent.activeComponent instanceof RotatedLabel){
+	        	  RotatedLabel label =((RotatedLabel)parent.activeComponent);
+	        	  lastRotation	= label.getRotation();
+	        	  label.setRotation(0);
+	        	  label.setEditable(true);
+	        	  int len = label.getDocument().getLength();
+	        	  label.setCaretPosition(len);
+	        	  label.requestFocusInWindow();
+	        	  lastDoubleClicked = parent.activeComponent;
+	          }
+	    	}
+		}
+		}
+	}
 }
